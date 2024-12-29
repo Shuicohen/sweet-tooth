@@ -1,0 +1,137 @@
+/* Homepage Styles */
+.homepage {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  
+  backdrop-filter: blur(5px); /* Adds a subtle blur for better visibility */
+}
+
+/* Welcome Section */
+.welcome-section {
+  padding: 40px 20px;
+  margin-bottom: 30px;
+  background-color: rgba(223, 226, 230, 0.8); 
+  color: #050505;
+  border-radius: 8px;
+}
+
+.welcome-section h1 {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.welcome-section p {
+  font-size: 1.2rem;
+}
+
+/* Featured Products Section */
+.featured-products {
+  margin-top: 20px;
+}
+
+.featured-products h2 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #080808;
+}
+
+.products-grid {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.product-card {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  width: 250px;
+  background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+}
+
+.product-card img {
+  max-width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.product-card h3 {
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.product-card p {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.product-card .price {
+  color: #28a745;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.details-btn {
+  display: inline-block;
+  padding: 8px 15px;
+  font-size: 1rem;
+  background-color: #007bff;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.details-btn:hover {
+  background-color: #0056b3;
+}
+
+.view-all-btn-container {
+  margin-top: 30px; /* Adjust this value to control vertical spacing */
+  justify-content: center; /* Horizontally center the button */
+  align-items: center; /* Aligns with the center height of the product cards */
+  height: 100%; /* Ensures it aligns vertically with the products grid */
+}
+
+.view-all-btn {
+  padding: 12px 25px; /* Button size */
+  font-size: 1.1rem; /* Text size */
+  background-color: #007bff;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.view-all-btn:hover {
+  background-color: #0056b3;
+  transform: scale(1.05); /* Subtle hover effect */
+}
+
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .products-grid {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .product-card {
+    width: 100%;
+    max-width: 350px;
+  }
+}

@@ -1,0 +1,67 @@
+.my-orders-page {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: #b1b3b4;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.my-orders-page h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.date-group {
+    margin-bottom: 30px;
+}
+
+.date-group h2 {
+    color: #007bff;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.order-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.order-items {
+    margin-left: 20px;
+}
+
+
+.order-item {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fdfdfd;
+}
+
+.order-details p {
+    margin: 5px 0;
+}
+
+.order-group p {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #333;
+}
+.pending {
+    color: #ff9800; /* Orange for Pending */
+    font-weight: bold;
+}
+
+.completed {
+    color: #4caf50; /* Green for Completed */
+    font-weight: bold;
+}

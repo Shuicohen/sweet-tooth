@@ -1,0 +1,85 @@
+/* main.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@400;700&display=swap');
+
+:root {
+  --primary: blue;
+  --primary-light: rgb(6, 149, 197);
+  --primary-dark: darkblue;
+  --secondary: hsl(220, 13%, 13%);
+  --gray-light: hsl(223, 64%, 98%);
+  --gray-dark: hsl(219, 9%, 45%);
+  --white: #fff;
+  --font-family: 'Kumbh Sans', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('../assets/background.jpg') no-repeat center center;
+  background-size: contain;
+  opacity: 0.4; /* Fades the image */
+  z-index: -1; /* Places it behind other content */
+}
+
+
+
+
+button {
+  background-color: #007bff;
+  color: var(--white);
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #024083
+}
+/* Ensure root and body take full height */
+html, body {
+  height: 100%; /* Full height for the page */
+  margin: 0;
+  padding: 0;
+}
+
+/* Root container for the app */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Ensure the container covers the viewport height */
+}
+
+/* Main content grows to fill space */
+main {
+  flex: 1; /* Ensures the main content grows and pushes footer down */
+}
+
+/* Footer styling */
+footer {
+  text-align: center;
+  padding: 15px 0;
+  background-color: var(--gray-light);
+  color: var(--secondary);
+  font-size: 1rem;
+  border-top: 1px solid var(--gray-dark);
+}

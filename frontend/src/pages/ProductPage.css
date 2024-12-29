@@ -1,0 +1,173 @@
+.product-page {
+  padding: 40px 20px; /* Space around the content */
+  text-align: center;
+}
+
+.products-title {
+  font-size: 2.5rem;
+  margin-bottom: 30px; /* Space below the title */
+  color: blue /* Use the primary color */
+}
+
+.products-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px; /* Space between products */
+  justify-content: center;
+}
+
+/* Ensure the container aligns the product cards symmetrically */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin: 20px;
+}
+
+/* Set uniform size for product cards */
+/* Align product details consistently */
+/* Product Card */
+.product-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  margin: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+  width: 200px; /* Uniform width */
+  height: 370px; /* Increased height for extra details */
+  text-align: center;
+}
+
+/* Product Image */
+.product-card img {
+  max-height: 100px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+/* Product Name */
+.product-card .product-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+/* Current Price */
+.product-card .product-price {
+  font-size: 1rem;
+  font-weight: bold;
+  color: green;
+  margin-bottom: 0.2rem;
+}
+
+/* Original Price (if applicable) */
+.product-card .original-price {
+  font-size: 0.9rem;
+  color: #999;
+  text-decoration: line-through;
+  margin-bottom: 0.2rem;
+}
+
+/* Discount Percentage (if applicable) */
+.product-card .discount {
+  font-size: 0.9rem;
+  color: red;
+  margin-bottom: 0.5rem;
+}
+
+/* Quantity Container */
+.product-card .quantity-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Quantity Buttons */
+.product-card .quantity-container button {
+  width: 25px;
+  height: 25px;
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
+  border: none;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.product-card .quantity-container button:hover {
+  background-color: #0056b3;
+}
+
+/* Quantity Number */
+.product-card .quantity-container span {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Add to Cart Button */
+.product-card button.add-to-cart {
+  margin-top: auto;
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.product-card button.add-to-cart:hover {
+  background-color: #0056b3;
+}
+
+
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #ddd;
+  border-top: 5px solid var(--primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .products-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .product-card {
+    max-width: 100%; /* Adjust product card width for smaller screens */
+  }
+}
