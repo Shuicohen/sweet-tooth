@@ -28,7 +28,7 @@ export const UserProvider = ({ children }) => {
             const token = localStorage.getItem("token");
             if (token) {
                 try {
-                    const response = await fetch("http://localhost:5000/verify-token", {
+                    const response = await fetch("https://sweet-tooth-lqt1.onrender.com/verify-token", {
                         headers: { Authorization: `Bearer ${token}` },
                     });
 
