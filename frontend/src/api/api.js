@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:5000', // Make sure this matches your backend's URL and port
+    baseURL: 'https://sweet-tooth-lqt1.onrender.com', // Make sure this matches your backend's URL and port
 });
 
 export const getProducts = () => api.get('/products');
