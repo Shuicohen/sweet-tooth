@@ -24,7 +24,7 @@ const CheckoutPage = ({ cartItems, setCartItems }) => {
         setLoading(true);
 
         try {
-            const response = await fetch("http://localhost:5000/checkout", {
+            const response = await fetch("https://sweet-tooth-lqt1.onrender.com/checkout", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
