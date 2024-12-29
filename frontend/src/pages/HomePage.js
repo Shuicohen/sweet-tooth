@@ -10,7 +10,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/products");
+        const response = await axios.get("https://sweet-tooth-lqt1.onrender.com/products");
         setProducts(response.data); // Dynamically fetch products
       } catch (error) {
         console.error("Error fetching products:", error);
