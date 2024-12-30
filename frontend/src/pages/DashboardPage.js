@@ -259,7 +259,7 @@ const DashboardPage = () => {
         const imageUrl = product.images
             ? product.images.startsWith("http")
                 ? product.images
-                : `http://localhost:5000${product.images}`
+                : `https://sweet-tooth-lqt1.onrender.com${product.images}`
             : "/default-image.jpg";
         return <img src={imageUrl} alt={product.name} className="product-image" />;
     };
