@@ -16,7 +16,8 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+
 console.log(path.join(__dirname, "uploads"));
 
 
