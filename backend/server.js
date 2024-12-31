@@ -16,9 +16,9 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
-app.use("/images", express.static(path.join(__dirname, "images")));
-// Serve uploaded images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+console.log(path.join(__dirname, "uploads"));
+
 
 const generateOrderId = () => {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
