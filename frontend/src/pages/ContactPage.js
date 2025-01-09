@@ -1,6 +1,6 @@
 import React from "react";
 import "./ContactPage.css";
-import qrCodeImage from "../assets/whatsapp-qr.png";
+import qrCodeImage from "../assets/WhatsApp qr.jpg";
 
 const ContactPage = () => {
   return (
