@@ -8,8 +8,7 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 const crypto = require("crypto");
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
 dotenv.config();
 
 const app = express();
@@ -20,7 +19,8 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use("/images", express.static(path.join(__dirname, "images")));
 // Serve uploaded images
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static("/opt/render/project/uploads"));
+
 
 const generateOrderId = () => {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
@@ -114,21 +114,14 @@ app.post("/login", async (req, res) => {
 });
 
 // Configure Multer storage
-
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+const storage = multer.diskStorage({
+    destination: "/opt/render/project/uploads",
+    filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${file.originalname}`;
+        cb(null, uniqueSuffix);
+    },
 });
 
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'product-images',
-        format: async (req, file) => 'png', // You can change to 'jpg' or 'webp'
-        public_id: (req, file) => file.originalname.split('.')[0] + '-' + Date.now()
-    }
-});
 
 
 // Filter to allow only images
@@ -169,7 +162,7 @@ app.get("/products", async (req, res) => {
 
         const productsWithImageURLs = products.rows.map((product) => ({
             ...product,
-            images: product.images ? `http://localhost:5000/uploads/${product.images}` : null,
+            images: product.images ? `https://sweettooth-zhjg.onrender.com/uploads/${product.images}` : null,
         }));
 
         res.json(productsWithImageURLs);
@@ -192,7 +185,7 @@ app.get("/products/:id", async (req, res) => {
 
         const product = result.rows[0];
         if (product.images) {
-            product.images = `http://localhost:5000/uploads/${product.images}`;
+            product.images = `https://sweettooth-zhjg.onrender.com/uploads/${product.images}`;
         }
 
         res.json(product);
