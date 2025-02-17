@@ -16,10 +16,9 @@ app.use(cors({
 }));
 
 app.use(bodyParser.json());
-app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
-
-console.log(path.join(__dirname, "uploads"));
-
+app.use("/images", express.static(path.join(__dirname, "images")));
+// Serve uploaded images
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const generateOrderId = () => {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
@@ -159,7 +158,7 @@ app.get("/products", async (req, res) => {
 
         const productsWithImageURLs = products.rows.map((product) => ({
             ...product,
-            images: product.images ? `https://sweet-tooth-lqt1.onrender.com/uploads/${product.images}` : null,
+            images: product.images ? `http://localhost:5000/uploads/${product.images}` : null,
         }));
 
         res.json(productsWithImageURLs);
@@ -182,7 +181,7 @@ app.get("/products/:id", async (req, res) => {
 
         const product = result.rows[0];
         if (product.images) {
-            product.images = `https://sweet-tooth-lqt1.onrender.com/uploads/${product.images}`;
+            product.images = `http://localhost:5000/uploads/${product.images}`;
         }
 
         res.json(product);
