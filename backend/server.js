@@ -8,7 +8,6 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 const crypto = require("crypto");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
 dotenv.config();
 
 const app = express();
@@ -112,24 +111,17 @@ app.post("/login", async (req, res) => {
     }
 });
 
-
-// Cloudinary Configuration
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-  });
-  
-  // Multer Storage Configuration for Cloudinary
-  const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-      folder: "product-images",
-      allowed_formats: ["jpg", "png", "jpeg"],
+// Configure Multer storage
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, "uploads")); // Save in the "uploads" folder
     },
-  });
-  
-  
+    filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${file.originalname}`;
+        cb(null, uniqueSuffix);
+    },
+});
+
 
 // Filter to allow only images
 const fileFilter = (req, file, cb) => {
@@ -161,33 +153,44 @@ app.post("/products", authenticateToken, upload.single("image"), async (req, res
 
 // Fetch Products
 app.get("/products", async (req, res) => {
-  try {
-    const products = await pool.query("SELECT * FROM products");
+    try {
+        const products = await pool.query("SELECT * FROM products");
 
-    res.json(products.rows);
-  } catch (err) {
-    console.error("Error fetching products:", err);
-    res.status(500).json({ message: "Failed to fetch products" });
-  }
+        const productsWithImageURLs = products.rows.map((product) => ({
+            ...product,
+            images: product.images ? `http://localhost:5000/uploads/${product.images}` : null,
+        }));
+
+        res.json(productsWithImageURLs);
+    } catch (err) {
+        console.error("Error fetching products:", err);
+        res.status(500).json({ message: "Failed to fetch products" });
+    }
 });
 
 // Fetch a single product by ID
 app.get("/products/:id", async (req, res) => {
-  const { id } = req.params;
+    const { id } = req.params;
 
-  try {
-    const result = await pool.query("SELECT * FROM products WHERE id = $1", [id]);
+    try {
+        const result = await pool.query("SELECT * FROM products WHERE id = $1", [id]);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Product not found" });
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+
+        const product = result.rows[0];
+        if (product.images) {
+            product.images = `http://localhost:5000/uploads/${product.images}`;
+        }
+
+        res.json(product);
+    } catch (err) {
+        console.error("Error fetching product:", err);
+        res.status(500).json({ message: "Failed to fetch product" });
     }
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error("Error fetching product:", err);
-    res.status(500).json({ message: "Failed to fetch product" });
-  }
 });
+
 
 // Add Order
 app.post("/orders", authenticateToken, async (req, res) => {
@@ -370,90 +373,100 @@ The Sweet Tooth Team
         res.status(500).json({ message: "Checkout failed.", error: err.message });
     }
 });
-// Add Product with Image Upload (Admin Only)
+
+// Add Product (Admin Only)
 app.post("/products", authenticateToken, upload.single("image"), async (req, res) => {
     const { name, price, original_price, discount, description } = req.body;
-    const imageUrl = req.file ? req.file.path : null;
-  
+    const images = req.file ? `uploads/${req.file.filename}` : null;
+
     if (!name || !price || !description) {
-      return res.status(400).json({ message: "Missing required fields: name, price, or description." });
+        return res.status(400).json({ message: "Missing required fields: name, price, or description." });
     }
-  
+
     // Check if user is admin
     if (req.user.email !== process.env.ADMIN_EMAIL) {
-      return res.status(403).json({ message: "Forbidden. Only admins can add products." });
+        return res.status(403).json({ message: "Forbidden. Only admins can add products." });
     }
-  
+
     try {
-      const result = await pool.query(
-        "INSERT INTO products (name, price, original_price, discount, description, images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-        [name, parseFloat(price), original_price ? parseFloat(original_price) : null, discount ? parseFloat(discount) : null, description, imageUrl]
-      );
-      res.json(result.rows[0]);
+        const result = await pool.query(
+            "INSERT INTO products (name, price, original_price, discount, description, images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            [name, parseFloat(price), original_price ? parseFloat(original_price) : null, discount ? parseFloat(discount) : null, description, images]
+        );
+        res.json(result.rows[0]);
     } catch (err) {
-      console.error("Error adding product:", err);
-      res.status(500).json({ message: "Failed to add product." });
+        console.error("Error adding product:", err);
+        res.status(500).json({ message: "Failed to add product." });
     }
-  });
-  
+});
 
 
 // Update Product (Admin Only)
 app.put("/products/:id", authenticateToken, upload.single("image"), async (req, res) => {
     const { id } = req.params;
     const { name, price, original_price, discount, description } = req.body;
-    const imageUrl = req.file ? req.file.path : null;
-  
+
     if (!name || !price || !description) {
-      return res.status(400).json({ message: "Missing required fields: name, price, or description." });
+        return res.status(400).json({ message: "Missing required fields: name, price, or description." });
     }
-  
+
     // Check if user is admin
     if (req.user.email !== process.env.ADMIN_EMAIL) {
-      return res.status(403).json({ message: "Forbidden. Only admins can update products." });
+        return res.status(403).json({ message: "Forbidden. Only admins can update products." });
     }
-  
+
     try {
-      const fieldsToUpdate = ["name", "price", "description"];
-      const values = [name, parseFloat(price), description];
-  
-      if (original_price) {
-        fieldsToUpdate.push("original_price");
-        values.push(parseFloat(original_price));
-      }
-  
-      if (discount) {
-        fieldsToUpdate.push("discount");
-        values.push(parseFloat(discount));
-      }
-  
-      if (imageUrl) {
-        fieldsToUpdate.push("images");
-        values.push(imageUrl);
-      }
-  
-      values.push(id);
-  
-      const query = `
-        UPDATE products
-        SET ${fieldsToUpdate.map((field, index) => `${field} = $${index + 1}`).join(", ")}
-        WHERE id = $${fieldsToUpdate.length + 1}
-        RETURNING *;
-      `;
-  
-      const updatedProduct = await pool.query(query, values);
-  
-      if (updatedProduct.rowCount === 0) {
-        return res.status(404).json({ message: "Product not found." });
-      }
-  
-      res.json(updatedProduct.rows[0]);
+        const fieldsToUpdate = [];
+        const values = [];
+
+        fieldsToUpdate.push("name");
+        values.push(name);
+
+        fieldsToUpdate.push("price");
+        values.push(parseFloat(price));
+
+        if (original_price) {
+            fieldsToUpdate.push("original_price");
+            values.push(parseFloat(original_price));
+        }
+
+        if (discount) {
+            fieldsToUpdate.push("discount");
+            values.push(parseFloat(discount));
+        }
+
+        fieldsToUpdate.push("description");
+        values.push(description);
+
+        // If a new image is uploaded, add it to the update query; otherwise, retain the existing image
+        if (req.file) {
+            const imagePath = `${req.file.filename}`; // Save relative path
+            fieldsToUpdate.push("images");
+            values.push(imagePath);
+        }
+
+        values.push(id);
+
+        const query = `
+            UPDATE products
+            SET ${fieldsToUpdate.map((field, index) => `${field} = $${index + 1}`).join(", ")}
+            WHERE id = $${fieldsToUpdate.length + 1}
+            RETURNING *;
+        `;
+
+        const updatedProduct = await pool.query(query, values);
+
+        if (updatedProduct.rowCount === 0) {
+            return res.status(404).json({ message: "Product not found." });
+        }
+
+        res.json(updatedProduct.rows[0]);
     } catch (error) {
-      console.error("Error updating product:", error);
-      res.status(500).json({ message: "Internal Server Error." });
+        console.error("Error updating product:", error);
+        res.status(500).json({ message: "Internal Server Error." });
     }
-  });
-  
+});
+
 
 
 // Delete Product (Admin Only)
