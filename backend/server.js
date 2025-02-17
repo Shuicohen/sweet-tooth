@@ -8,6 +8,8 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
 const crypto = require("crypto");
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 dotenv.config();
 
 const app = express();
@@ -112,14 +114,20 @@ app.post("/login", async (req, res) => {
 });
 
 // Configure Multer storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, "uploads")); // Save in the "uploads" folder
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = `${Date.now()}-${file.originalname}`;
-        cb(null, uniqueSuffix);
-    },
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'product-images',
+        format: async (req, file) => 'png', // You can change to 'jpg' or 'webp'
+        public_id: (req, file) => file.originalname.split('.')[0] + '-' + Date.now()
+    }
 });
 
 
@@ -137,17 +145,20 @@ const upload = multer({ storage, fileFilter });
 // Endpoint for adding a product with an image
 app.post("/products", authenticateToken, upload.single("image"), async (req, res) => {
     const { name, price, description } = req.body;
-    const images = req.file ? req.file.filename : null; // Adjust for "images"
+
+    if (!name || !price || !description || !req.file.path) {
+        return res.status(400).json({ message: "All fields and an image are required." });
+    }
 
     try {
         const result = await pool.query(
             "INSERT INTO products (name, price, description, images) VALUES ($1, $2, $3, $4) RETURNING *",
-            [name, price, description, images]
+            [name, parseFloat(price), description, req.file.path] // Store Cloudinary URL
         );
         res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error("Error adding product:", error);
-        res.status(500).json({ message: "Error adding product." });
+    } catch (err) {
+        console.error("Error adding product:", err);
+        res.status(500).json({ message: "Failed to add product." });
     }
 });
 
