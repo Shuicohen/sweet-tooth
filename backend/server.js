@@ -159,7 +159,7 @@ app.get("/products", async (req, res) => {
 
         const productsWithImageURLs = products.rows.map((product) => ({
             ...product,
-            images: product.images ? `https://sweet-tooth-lqt1.onrender.com/uploads/${product.images}` : null,
+            images: product.images ? `https://sweettooth-zhjg.onrender.com/uploads/${product.images}` : null,
         }));
 
         res.json(productsWithImageURLs);
@@ -182,7 +182,7 @@ app.get("/products/:id", async (req, res) => {
 
         const product = result.rows[0];
         if (product.images) {
-            product.images = `https://sweet-tooth-lqt1.onrender.com/uploads/${product.images}`;
+            product.images = `https://sweettooth-zhjg.onrender.com/uploads/${product.images}`;
         }
 
         res.json(product);
