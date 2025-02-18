@@ -19,8 +19,7 @@ app.use(cors({
 app.use(bodyParser.json());
 app.use("/images", express.static(path.join(__dirname, "images")));
 // Serve uploaded images
-app.use("/uploads", express.static("/opt/render/project/uploads"));
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const generateOrderId = () => {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
@@ -115,13 +114,14 @@ app.post("/login", async (req, res) => {
 
 // Configure Multer storage
 const storage = multer.diskStorage({
-    destination: "/opt/render/project/uploads",
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, "uploads")); // Save in the "uploads" folder
+    },
     filename: (req, file, cb) => {
         const uniqueSuffix = `${Date.now()}-${file.originalname}`;
         cb(null, uniqueSuffix);
     },
 });
-
 
 
 // Filter to allow only images
@@ -138,20 +138,17 @@ const upload = multer({ storage, fileFilter });
 // Endpoint for adding a product with an image
 app.post("/products", authenticateToken, upload.single("image"), async (req, res) => {
     const { name, price, description } = req.body;
-
-    if (!name || !price || !description || !req.file.path) {
-        return res.status(400).json({ message: "All fields and an image are required." });
-    }
+    const images = req.file ? req.file.filename : null; // Adjust for "images"
 
     try {
         const result = await pool.query(
             "INSERT INTO products (name, price, description, images) VALUES ($1, $2, $3, $4) RETURNING *",
-            [name, parseFloat(price), description, req.file.path] // Store Cloudinary URL
+            [name, price, description, images]
         );
         res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error("Error adding product:", err);
-        res.status(500).json({ message: "Failed to add product." });
+    } catch (error) {
+        console.error("Error adding product:", error);
+        res.status(500).json({ message: "Error adding product." });
     }
 });
 
@@ -162,7 +159,7 @@ app.get("/products", async (req, res) => {
 
         const productsWithImageURLs = products.rows.map((product) => ({
             ...product,
-            images: product.images ? `https://sweettooth-zhjg.onrender.com/uploads/${product.images}` : null,
+            images: product.images ? `https://sweet-tooth-lqt1.onrender.com/uploads/${product.images}` : null,
         }));
 
         res.json(productsWithImageURLs);
@@ -185,7 +182,7 @@ app.get("/products/:id", async (req, res) => {
 
         const product = result.rows[0];
         if (product.images) {
-            product.images = `https://sweettooth-zhjg.onrender.com/uploads/${product.images}`;
+            product.images = `https://sweet-tooth-lqt1.onrender.com/uploads/${product.images}`;
         }
 
         res.json(product);
