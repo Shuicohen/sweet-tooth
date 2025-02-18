@@ -6,6 +6,8 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const path = require("path");
 const nodemailer = require("nodemailer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const multer = require("multer");
 const crypto = require("crypto");
 
@@ -15,16 +17,14 @@ const app = express();
 app.use(cors({
     origin: "https://sweettooth-zhjg.onrender.com", 
 }));
-
 app.use(bodyParser.json());
-app.use("/images", express.static(path.join(__dirname, "images")));
-// Serve uploaded images
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
+
 
 const generateOrderId = () => {
-    const date = new Date().toISOString().slice(0, 10).replace(/-/g, ""); // YYYYMMDD
-    const randomPart = crypto.randomBytes(3).toString("hex").toUpperCase(); // 6-character hex string
-    return `ORD${date}${randomPart}`; // Example: ORD2023120184A3C2
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const randomPart = crypto.randomBytes(3).toString("hex").toUpperCase();
+    return `ORD${date}${randomPart}`;
 };
 
 // Database connection
@@ -40,6 +40,25 @@ const pool = new Pool({
 
 const SECRET_KEY = process.env.SECRET_KEY;
 
+// ➜ 2) Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// ➜ 3) Configure Cloudinary Storage for Multer
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: "products", // The folder name in your Cloudinary dashboard
+        allowed_formats: ["jpg", "png", "jpeg"],
+    },
+});
+
+// ➜ 4) Create Multer instance with Cloudinary storage
+const upload = multer({ storage });
+
 // Middleware for authenticating users
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers["authorization"];
@@ -53,11 +72,10 @@ const authenticateToken = (req, res, next) => {
         if (err) {
             return res.status(403).json({ message: "Invalid or expired token." });
         }
-        req.user = user; // Attach user info to the request
+        req.user = user;
         next();
     });
 };
-
 
 // User Registration
 app.post("/register", async (req, res) => {
@@ -112,43 +130,38 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// Configure Multer storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, "uploads")); // Save in the "uploads" folder
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = `${Date.now()}-${file.originalname}`;
-        cb(null, uniqueSuffix);
-    },
-});
-
-
-// Filter to allow only images
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-        cb(null, true);
-    } else {
-        cb(new Error("Only image files are allowed!"), false);
-    }
-};
-
-const upload = multer({ storage, fileFilter });
-
-// Endpoint for adding a product with an image
+// ➜ 5) Add Product (Admin Only), using Cloudinary
 app.post("/products", authenticateToken, upload.single("image"), async (req, res) => {
-    const { name, price, description } = req.body;
-    const images = req.file ? req.file.filename : null; // Adjust for "images"
+    const { name, price, original_price, discount, description } = req.body;
+
+    if (!name || !price || !description) {
+        return res.status(400).json({ message: "Missing required fields: name, price, or description." });
+    }
+
+    // Check if user is admin
+    if (req.user.email !== process.env.ADMIN_EMAIL) {
+        return res.status(403).json({ message: "Forbidden. Only admins can add products." });
+    }
+
+    // The CloudinaryStorage automatically sets req.file.path to the Cloudinary URL
+    const imageUrl = req.file ? req.file.path : null;
 
     try {
         const result = await pool.query(
-            "INSERT INTO products (name, price, description, images) VALUES ($1, $2, $3, $4) RETURNING *",
-            [name, price, description, images]
+            "INSERT INTO products (name, price, original_price, discount, description, images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+            [
+                name,
+                parseFloat(price),
+                original_price ? parseFloat(original_price) : null,
+                discount ? parseFloat(discount) : null,
+                description,
+                imageUrl,
+            ]
         );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        console.error("Error adding product:", error);
-        res.status(500).json({ message: "Error adding product." });
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Error adding product:", err);
+        res.status(500).json({ message: "Failed to add product." });
     }
 });
 
@@ -156,13 +169,8 @@ app.post("/products", authenticateToken, upload.single("image"), async (req, res
 app.get("/products", async (req, res) => {
     try {
         const products = await pool.query("SELECT * FROM products");
-
-        const productsWithImageURLs = products.rows.map((product) => ({
-            ...product,
-            images: product.images ? `https://sweettooth-zhjg.onrender.com/uploads/${product.images}` : null,
-        }));
-
-        res.json(productsWithImageURLs);
+        // images column now stores Cloudinary URLs directly.
+        res.json(products.rows);
     } catch (err) {
         console.error("Error fetching products:", err);
         res.status(500).json({ message: "Failed to fetch products" });
@@ -180,12 +188,7 @@ app.get("/products/:id", async (req, res) => {
             return res.status(404).json({ message: "Product not found" });
         }
 
-        const product = result.rows[0];
-        if (product.images) {
-            product.images = `https://sweettooth-zhjg.onrender.com/uploads/${product.images}`;
-        }
-
-        res.json(product);
+        res.json(result.rows[0]);
     } catch (err) {
         console.error("Error fetching product:", err);
         res.status(500).json({ message: "Failed to fetch product" });
@@ -376,33 +379,33 @@ The Sweet Tooth Team
 });
 
 // Add Product (Admin Only)
-app.post("/products", authenticateToken, upload.single("image"), async (req, res) => {
-    const { name, price, original_price, discount, description } = req.body;
-    const images = req.file ? `uploads/${req.file.filename}` : null;
+// app.post("/products", authenticateToken, upload.single("image"), async (req, res) => {
+//     const { name, price, original_price, discount, description } = req.body;
+//     const images = req.file ? `uploads/${req.file.filename}` : null;
 
-    if (!name || !price || !description) {
-        return res.status(400).json({ message: "Missing required fields: name, price, or description." });
-    }
+//     if (!name || !price || !description) {
+//         return res.status(400).json({ message: "Missing required fields: name, price, or description." });
+//     }
 
-    // Check if user is admin
-    if (req.user.email !== process.env.ADMIN_EMAIL) {
-        return res.status(403).json({ message: "Forbidden. Only admins can add products." });
-    }
+//     // Check if user is admin
+//     if (req.user.email !== process.env.ADMIN_EMAIL) {
+//         return res.status(403).json({ message: "Forbidden. Only admins can add products." });
+//     }
 
-    try {
-        const result = await pool.query(
-            "INSERT INTO products (name, price, original_price, discount, description, images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-            [name, parseFloat(price), original_price ? parseFloat(original_price) : null, discount ? parseFloat(discount) : null, description, images]
-        );
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error("Error adding product:", err);
-        res.status(500).json({ message: "Failed to add product." });
-    }
-});
+//     try {
+//         const result = await pool.query(
+//             "INSERT INTO products (name, price, original_price, discount, description, images) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+//             [name, parseFloat(price), original_price ? parseFloat(original_price) : null, discount ? parseFloat(discount) : null, description, images]
+//         );
+//         res.json(result.rows[0]);
+//     } catch (err) {
+//         console.error("Error adding product:", err);
+//         res.status(500).json({ message: "Failed to add product." });
+//     }
+// });
 
 
-// Update Product (Admin Only)
+// Update Product (Admin Only) with Cloudinary
 app.put("/products/:id", authenticateToken, upload.single("image"), async (req, res) => {
     const { id } = req.params;
     const { name, price, original_price, discount, description } = req.body;
@@ -411,20 +414,13 @@ app.put("/products/:id", authenticateToken, upload.single("image"), async (req, 
         return res.status(400).json({ message: "Missing required fields: name, price, or description." });
     }
 
-    // Check if user is admin
     if (req.user.email !== process.env.ADMIN_EMAIL) {
         return res.status(403).json({ message: "Forbidden. Only admins can update products." });
     }
 
     try {
-        const fieldsToUpdate = [];
-        const values = [];
-
-        fieldsToUpdate.push("name");
-        values.push(name);
-
-        fieldsToUpdate.push("price");
-        values.push(parseFloat(price));
+        const fieldsToUpdate = ["name", "price", "description"];
+        const values = [name, parseFloat(price), description];
 
         if (original_price) {
             fieldsToUpdate.push("original_price");
@@ -436,14 +432,10 @@ app.put("/products/:id", authenticateToken, upload.single("image"), async (req, 
             values.push(parseFloat(discount));
         }
 
-        fieldsToUpdate.push("description");
-        values.push(description);
-
-        // If a new image is uploaded, add it to the update query; otherwise, retain the existing image
-        if (req.file) {
-            const imagePath = `${req.file.filename}`; // Save relative path
+        // If a new image is uploaded, use Cloudinary URL
+        if (req.file && req.file.path) {
             fieldsToUpdate.push("images");
-            values.push(imagePath);
+            values.push(req.file.path);
         }
 
         values.push(id);
