@@ -179,31 +179,40 @@ const DashboardPage = () => {
     
     
 
-    const handleAddProduct = async () => {
-        const formData = new FormData();
-        formData.append("name", newProduct.name);
-        formData.append("price", newProduct.price);
-        formData.append("description", newProduct.description);
-        if (image) formData.append("image", image);
-    
-        try {
-            const response = await api.post("/products", formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-    
-            if (response.status === 201) {
-                setProducts((prevProducts) => [...prevProducts, response.data]); // Update state
-                setNewProduct({ name: "", price: "", description: "" });
-                setImage(null);
-                setIsAddFormOpen(false); // Close form
-            }
-        } catch (error) {
-            console.error("Error adding product:", error);
-        }
-    };
+const handleAddProduct = async () => {
+  const formData = new FormData();
+  formData.append("name", newProduct.name);
+  formData.append("price", newProduct.price);
+  formData.append("description", newProduct.description);
+  if (image) formData.append("image", image);
+
+  try {
+    // Make the request
+    const response = await api.post("/products", formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    // Mirror the update logic by checking for status 200
+    if (response.status === 200) {
+      // Insert newly created product into the product list
+      setProducts((prev) => [...prev, response.data]);
+
+      // Clear form fields
+      setNewProduct({ name: "", price: "", description: "" });
+      setImage(null);
+
+      // Close the form
+      setIsAddFormOpen(false);
+    }
+  } catch (error) {
+    console.error("Error adding product:", error);
+    // If there's an error, form remains open so user can fix input
+  }
+};
+
     
 
     const handleUpdateProduct = async () => {
