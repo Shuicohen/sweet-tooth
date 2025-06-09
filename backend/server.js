@@ -122,7 +122,12 @@ app.post("/login", async (req, res) => {
             return res.status(401).json({ message: "Invalid username/email or password." });
         }
 
-        const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "1h" });
+        // Include username in the token payload so it is available when verifying
+        const token = jwt.sign(
+            { id: user.id, username: user.username, email: user.email },
+            SECRET_KEY,
+            { expiresIn: "1h" }
+        );
         res.json({ token, user: { id: user.id, username: user.username, email: user.email } });
     } catch (err) {
         console.error("Login error:", err);
